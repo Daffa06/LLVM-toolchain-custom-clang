@@ -1,0 +1,86 @@
+name: Build Custom LLVM/Clang (PGO + BOLT)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-llvm:
+    name: Compile LLVM Toolchain
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Maximize Build Space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 8192
+          swap-size-mb: 8192
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python3 ninja-build cmake zstd
+
+      - name: Clone TCBuild (Toolchain Builder)
+        run: |
+          git clone https://github.com/ZyC-X/tcbuild.git
+          
+      - name: Clone PGO Target Kernel (Vayu 16.0-bpf)
+        run: |
+          git clone --depth=1 -b 16.0-bpf https://github.com/Daffa06/android_kernel_xiaomi_sm8150.git pgo-kernel
+
+      - name: Setup Cache untuk ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ccache
+          key: ${{ runner.os }}-ccache-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-
+
+      - name: Konfigurasi Limit ccache
+        run: |
+          # Membatasi ukuran cache maksimal 5GB (GitHub punya limit total 10GB per repo)
+          ccache -M 5G
+          # Reset statistik ccache agar kita tahu berapa banyak yang terpakai di run ini
+          ccache -z
+
+      - name: Configure TCBuild (Enable PGO, BOLT, LTO)
+        run: |
+          cd tcbuild
+          # Membuat file konfigurasi tcbuild.yaml secara dinamis
+          cat <<EOF > tcbuild.yaml
+          builder:
+            target: AArch64
+            pgo: true
+            bolt: true
+            lto: true
+            pgo_kernel: ../pgo-kernel
+            pgo_kernel_defconfig: vayu-defconfig
+          EOF
+          cat tcbuild.yaml
+
+      - name: Build the LLVM Toolchain
+        run: |
+          cd tcbuild
+          python3 build.py
+
+      - name: Lihat Statistik ccache
+        run: ccache -s
+
+      - name: Compress Toolchain
+        run: |
+          cd tcbuild/install
+          tar -czvf ../../LLVM-toolchain-custom-clang.tar.gz .
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LLVM-Custom-Clang-PGO-BOLT
+          path: LLVM-toolchain-custom-clang.tar.gz
+          compression-level: 0
