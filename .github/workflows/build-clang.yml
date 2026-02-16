@@ -49,6 +49,10 @@ jobs:
         run: |
           git clone --depth=1 -b 16.0-bpf https://github.com/Daffa06/android_kernel_xiaomi_sm8150.git pgo-kernel
 
+      - name: Prepare PGO Defconfig
+        run: |
+          cp pgo-kernel/arch/arm64/configs/vayu-defconfig pgo-kernel/arch/arm64/configs/defconfig
+
       - name: Setup Cache ccache
         uses: actions/cache@v4
         with:
@@ -73,7 +77,13 @@ jobs:
             DESC="⚠️ Ada error di tengah jalan, buruan cek log-nya!"
           fi
           
-          MESSAGE="<b>🚀 Laporan Build Toolchain </b>%0A%0A<b>Status:</b> ${STATUS}%0A<b>Repository:</b> ${{ github.repository }}%0A${DESC}%0A%0A<a href=\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\">🔍 Klik untuk Lihat Detail Build</a>"
+          MESSAGE="<b>🚀 Laporan Build Toolchain Vayu</b>
+
+          <b>Status:</b> ${STATUS}
+          <b>Repository:</b> ${{ github.repository }}
+          ${DESC}
+
+          <a href=\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\">🔍 Klik untuk Lihat Detail Build</a>"
 
             echo "Merakit ulang Docker Appleboy..."
             git clone --depth=1 https://github.com/appleboy/telegram-action.git /tmp/appleboy-tg
@@ -95,7 +105,7 @@ jobs:
             --check-targets "clang;lld;llvm" \
             --projects "clang;lld;llvm" \
             --targets "AArch64;ARM" \
-            --pgo kernel \
+            -pgo kernel-defconfig \
             -L ../pgo-kernel \
             --lto thin \
             --bolt
