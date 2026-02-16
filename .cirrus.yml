@@ -60,7 +60,6 @@ task:
         DESC="⚠️ Ada error di tengah jalan, buruan cek log-nya!"
       fi
       
-      # Menggunakan %0A untuk enter (newline) di URL encoding
       MESSAGE="<b>🚀 Laporan Build Toolchain Cirrus CI</b>%0A%0A<b>Status:</b> ${STATUS}%0A<b>Repository:</b> ${CIRRUS_REPO_FULL_NAME}%0A${DESC}%0A%0A<a href=\"https://cirrus-ci.com/task/${CIRRUS_TASK_ID}\">🔍 Klik untuk Lihat Detail Build</a>"
       
       curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
