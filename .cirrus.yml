@@ -1,5 +1,6 @@
 task:
   name: Compile LLVM Toolchain (PGO + BOLT)
+  timeout_in: 120m
   only_if: $CIRRUS_BRANCH == 'Builder-Cirrus'
   trigger_type: manual
   
@@ -38,7 +39,7 @@ task:
       --projects clang lld llvm \
       --targets AArch64 ARM X86 \
       --pgo=llvm \
-      --lto=full \
+      --lto=thin \
       --bolt
     ccache -s
 
