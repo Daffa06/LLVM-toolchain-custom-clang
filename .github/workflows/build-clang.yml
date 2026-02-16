@@ -64,20 +64,28 @@ jobs:
 
       - name: Send Notification Telegram
         if: always()
-        uses: appleboy/telegram-action@v1.0.1
-        with:
-          to: ${{ secrets.TELEGRAM_TO }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
-          format: html
-          message: |
-            <b>🚀 Laporan Build Toolchain </b>
-            
-            <b>Status:</b> ${{ job.status == 'success' && '✅ Sukses' || '❌ Gagal' }}
-            <b>Repository:</b> ${{ github.repository }}
-            
-            ${{ job.status == 'success' && '🔥 Toolchain siap di-download!' || '⚠️ Ada error, cek log!' }}
-            
-            <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">Lihat Detail Build</a>
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            STATUS="✅ Sukses"
+            DESC="🔥 Toolchain PGO+BOLT siap di-download di Artifacts!"
+          else
+            STATUS="❌ Gagal"
+            DESC="⚠️ Ada error di tengah jalan, buruan cek log-nya!"
+          fi
+          
+          MESSAGE="<b>🚀 Laporan Build Toolchain </b>%0A%0A<b>Status:</b> ${STATUS}%0A<b>Repository:</b> ${{ github.repository }}%0A${DESC}%0A%0A<a href=\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\">🔍 Klik untuk Lihat Detail Build</a>"
+
+            echo "Merakit ulang Docker Appleboy..."
+            git clone --depth=1 https://github.com/appleboy/telegram-action.git /tmp/appleboy-tg
+            docker build -q -t appleboy-action /tmp/appleboy-tg
+
+            echo "Mengirim pesan..."
+            docker run --rm \
+              -e INPUT_TO="${{ secrets.TELEGRAM_TO }}" \
+              -e INPUT_TOKEN="${{ secrets.TELEGRAM_TOKEN }}" \
+              -e INPUT_FORMAT="html" \
+              -e INPUT_MESSAGE="$MESSAGE" \
+              appleboy-action
 
       - name: Build the LLVM Toolchain (Official Flags)
         run: |
