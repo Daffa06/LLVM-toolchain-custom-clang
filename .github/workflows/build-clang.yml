@@ -64,7 +64,7 @@ jobs:
 
       - name: Send Notification Telegram
         if: always()
-        uses: appleboy/telegram-action@master
+        uses: appleboy/telegram-action@v1.0.1
         with:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
@@ -74,11 +74,10 @@ jobs:
             
             <b>Status:</b> ${{ job.status == 'success' && '✅ Sukses' || '❌ Gagal' }}
             <b>Repository:</b> ${{ github.repository }}
-            <b>Workflow:</b> ${{ github.workflow }}
             
-            ${{ job.status == 'success' && '🔥 Toolchain siap di-download di Artifacts!' || '⚠️ Ada error, buruan cek log-nya!' }}
+            ${{ job.status == 'success' && '🔥 Toolchain siap di-download!' || '⚠️ Ada error, cek log!' }}
             
-            <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">Lihat Detail Build di Sini</a>
+            <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">Lihat Detail Build</a>
 
       - name: Build the LLVM Toolchain (Official Flags)
         run: |
