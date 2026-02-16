@@ -70,11 +70,9 @@ jobs:
             --check-targets "clang;lld;llvm" \
             --projects "clang;lld;llvm" \
             --targets "AArch64;ARM" \
-            --pgo-kernel \
-            --pgo-target-kernel-source ../pgo-kernel \
-            --pgo-target-kernel-config vayu_defconfig \
-            --pgo-target-kernel-arch arm64 \
-            --thin-lto \
+            --pgo kernel \
+            -L ../pgo-kernel \
+            --lto thin \
             --bolt
 
       - name: Check ccache
