@@ -9,8 +9,15 @@ jobs:
     runs-on: ubuntu-22.04
     
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - name: Maximize Build Space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 16384
+          swap-size-mb: 2048
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
 
       - name: Manual Super Clean Disk
         run: |
@@ -19,23 +26,16 @@ jobs:
           sudo rm -rf /usr/local/share/powershell /usr/share/swift /usr/local/bin/aliyun /usr/local/bin/hazelcast
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
           sudo apt-get clean
-          mkdir -p ../apt-cache/lists
-          mkdir -p ../apt-cache/archives
-          sudo mv /var/lib/apt/lists ../apt-cache/lists
-          sudo mv /var/cache/apt/archives ../apt-cache/archives  
-          sudo ln -s /home/runner/work/${{ github.event.repository.name }}/${{ github.event.repository.name }}/../apt-cache/lists /var/lib/apt/lists
-          sudo ln -s /home/runner/work/${{ github.event.repository.name }}/${{ github.event.repository.name }}/../apt-cache/archives /var/cache/apt/archives
+          mkdir -p /home/runner/work/system_cache/apt/lists
+          mkdir -p /home/runner/work/system_cache/apt/archives
+          mkdir -p /home/runner/work/system_cache/ccache
+          sudo rm -rf /var/lib/apt/lists && sudo ln -s /home/runner/work/system_cache/apt/lists /var/lib/apt/lists
+          sudo rm -rf /var/cache/apt/archives && sudo ln -s /home/runner/work/system_cache/apt/archives /var/cache/apt/archives 
+          echo "CCACHE_DIR=/home/runner/work/system_cache/ccache" >> $GITHUB_ENV
           df -h
 
-      - name: Maximize Build Space
-        uses: easimon/maximize-build-space@master
-        with:
-          root-reserve-mb: 8192
-          swap-size-mb: 8192
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-          remove-codeql: 'true'
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
       - name: Install Dependencies
         run: |
@@ -52,14 +52,14 @@ jobs:
       - name: Setup Cache ccache
         uses: actions/cache@v4
         with:
-          path: ~/.cache/ccache
+          path: /home/runner/work/system_cache/ccache
           key: ${{ runner.os }}-ccache-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-ccache-
 
       - name: Configure Limit ccache
         run: |
-          ccache -M 5G
+          ccache -M 10G
           ccache -z
 
       - name: Send Notification Telegram
