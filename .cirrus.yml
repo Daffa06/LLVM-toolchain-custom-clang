@@ -1,0 +1,69 @@
+task:
+  name: Compile LLVM Toolchain (PGO + BOLT)
+  only_if: $CIRRUS_BRANCH == 'Builder-Cirrus'
+  trigger_type: manual
+  
+  container:
+    image: archlinux:latest
+    cpu: 16
+    memory: 24G
+
+  env:
+    DEBIAN_FRONTEND: noninteractive
+    CCACHE_DIR: /tmp/ccache
+    TELEGRAM_TO: ENCRYPTED[masukkan_hasil_enkripsi_chat_id_disini]
+    TELEGRAM_TOKEN: ENCRYPTED[masukkan_hasil_enkripsi_token_bot_disini]
+
+  ccache_cache:
+    folder: /tmp/ccache
+    reupload_on_changes: true
+
+  install_dependencies_script: |
+    echo "[multilib]" >> /etc/pacman.conf
+    echo "Include = /etc/pacman.d/mirrorlist" >> /etc/pacman.conf
+    pacman -Syyu --noconfirm
+    pacman -S --noconfirm \
+      base-devel bc bison ccache curl flex git gperf \
+      libxml2 lzop rsync schedtool squashfs-tools zip zlib zstd \
+      python cmake ninja gcc-multilib \
+      lib32-ncurses lib32-readline lib32-zlib
+    ccache -M 10G
+    ccache -z
+
+  clone_tc_build_script:
+    - git clone --depth=1 https://github.com/ClangBuiltLinux/tc-build.git
+
+  build_llvm_script: |
+    cd tc-build
+    python3 build-llvm.py \
+      --projects clang lld llvm \
+      --targets AArch64 ARM X86 \
+      --pgo=llvm \
+      --lto=thin \
+      --bolt
+    ccache -s
+
+  compress_toolchain_script: |
+    cd tc-build/install
+    tar -czvf ../../LLVM-toolchain-custom-clang.tar.gz .
+
+  toolchain_artifacts:
+    path: "LLVM-toolchain-custom-clang.tar.gz"
+
+  always:
+    telegram_notification_script: |
+      if [ "$CIRRUS_TASK_STATUS" == "COMPLETED" ]; then
+        STATUS="✅ Sukses"
+        DESC="🔥 Toolchain PGO+BOLT siap di-download di Artifacts!"
+      else
+        STATUS="❌ Gagal"
+        DESC="⚠️ Ada error di tengah jalan, buruan cek log-nya!"
+      fi
+      
+      # Menggunakan %0A untuk enter (newline) di URL encoding
+      MESSAGE="<b>🚀 Laporan Build Toolchain Cirrus CI</b>%0A%0A<b>Status:</b> ${STATUS}%0A<b>Repository:</b> ${CIRRUS_REPO_FULL_NAME}%0A${DESC}%0A%0A<a href=\"https://cirrus-ci.com/task/${CIRRUS_TASK_ID}\">🔍 Klik untuk Lihat Detail Build</a>"
+      
+      curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+        -d chat_id="${TELEGRAM_TO}" \
+        -d parse_mode="HTML" \
+        -d text="$MESSAGE"
