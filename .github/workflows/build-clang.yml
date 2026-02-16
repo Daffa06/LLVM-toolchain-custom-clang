@@ -49,10 +49,6 @@ jobs:
         run: |
           git clone --depth=1 -b 16.0-bpf https://github.com/Daffa06/android_kernel_xiaomi_sm8150.git pgo-kernel
 
-      - name: Prepare PGO Defconfig
-        run: |
-          cp pgo-kernel/arch/arm64/configs/vayu-defconfig pgo-kernel/arch/arm64/configs/defconfig
-
       - name: Setup Cache ccache
         uses: actions/cache@v4
         with:
@@ -77,7 +73,7 @@ jobs:
             DESC="⚠️ Ada error di tengah jalan, buruan cek log-nya!"
           fi
           
-          MESSAGE="<b>🚀 Laporan Build Toolchain Vayu</b>
+          MESSAGE="<b>🚀 Laporan Build Toolchain</b>
 
           <b>Status:</b> ${STATUS}
           <b>Repository:</b> ${{ github.repository }}
@@ -105,9 +101,9 @@ jobs:
             --check-targets "clang;lld;llvm" \
             --projects "clang;lld;llvm" \
             --targets "AArch64;ARM" \
-            -pgo kernel-defconfig \
-            -L ../pgo-kernel \
-            --lto thin \
+            --pgo=vayu-defconfig \
+            --linux-folder=../pgo-kernel \
+            --lto=thin \
             --bolt
 
       - name: Check ccache
