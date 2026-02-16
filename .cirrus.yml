@@ -9,10 +9,9 @@ task:
     memory: 24G
 
   env:
-    DEBIAN_FRONTEND: noninteractive
     CCACHE_DIR: /tmp/ccache
-    TELEGRAM_TO: ENCRYPTED[masukkan_hasil_enkripsi_chat_id_disini]
-    TELEGRAM_TOKEN: ENCRYPTED[masukkan_hasil_enkripsi_token_bot_disini]
+    TELEGRAM_TO: ENCRYPTED[!56175acb971597d69851eb4d12c9047ffe1d76c1600de3b960b45528a3789d5508992928d8b0d80647605c5749203c75!]
+    TELEGRAM_TOKEN: ENCRYPTED[!091e1e536ed3ab1d7ea03f5efb50be078968ecd3092f954f06bccac62eb725cb721fa2d0475aab082211dacc4bade4bf!]
 
   ccache_cache:
     folder: /tmp/ccache
@@ -39,7 +38,7 @@ task:
       --projects clang lld llvm \
       --targets AArch64 ARM X86 \
       --pgo=llvm \
-      --lto=thin \
+      --lto=full \
       --bolt
     ccache -s
 
