@@ -67,7 +67,7 @@ jobs:
           python3 build-llvm.py \
             --check-targets "clang;lld;llvm" \
             --projects "clang;lld;llvm" \
-            --targets "AArch64;ARM" \
+            --targets AArch64 ARM \
             --pgo=llvm \
             --lto=thin \
             --bolt
