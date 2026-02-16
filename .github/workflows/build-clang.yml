@@ -47,14 +47,6 @@ jobs:
 
       - name: Clone Official tc-build
         run: git clone --depth=1 https://github.com/ClangBuiltLinux/tc-build.git
-          
-      - name: Clone PGO Target Kernel (Vayu 16.0-bpf)
-        run: |
-          git clone --depth=1 -b 16.0-bpf https://github.com/Daffa06/android_kernel_xiaomi_sm8150.git pgo-kernel
-
-      - name: Prepare PGO Defconfig
-        run: |
-          cp pgo-kernel/arch/arm64/configs/vayu-defconfig pgo-kernel/arch/arm64/configs/kernel-defconfig
 
       - name: Setup Cache ccache
         uses: actions/cache@v4
@@ -76,8 +68,7 @@ jobs:
             --check-targets "clang;lld;llvm" \
             --projects "clang;lld;llvm" \
             --targets "AArch64;ARM" \
-            --pgo=kernel-defconfig \
-            --linux-folder=../pgo-kernel \
+            --pgo=llvm \
             --lto=thin \
             --bolt
 
