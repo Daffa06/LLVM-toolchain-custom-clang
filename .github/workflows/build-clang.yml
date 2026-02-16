@@ -62,6 +62,24 @@ jobs:
           ccache -M 5G
           ccache -z
 
+      - name: Send Notification Telegram
+        if: always()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: html
+          message: |
+            <b>🚀 Laporan Build Toolchain </b>
+            
+            <b>Status:</b> ${{ job.status == 'success' && '✅ Sukses' || '❌ Gagal' }}
+            <b>Repository:</b> ${{ github.repository }}
+            <b>Workflow:</b> ${{ github.workflow }}
+            
+            ${{ job.status == 'success' && '🔥 Toolchain siap di-download di Artifacts!' || '⚠️ Ada error, buruan cek log-nya!' }}
+            
+            <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">Lihat Detail Build di Sini</a>
+
       - name: Build the LLVM Toolchain (Official Flags)
         run: |
           cd tc-build
