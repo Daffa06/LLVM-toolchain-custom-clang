@@ -70,20 +70,25 @@ jobs:
 
       - name: Strip & Clean Up Toolchain
         run: |
-          cd tc-build/install
+          cd tc-build/build/llvm/final
+
           echo "Ukuran sebelum dibersihkan:"
           du -sh .
+
           find . -name "*.a" -type f -delete
           rm -rf share/
+
           find bin/ -type f -executable -exec strip --strip-all {} + 2>/dev/null || true
           find lib/ -name "*.so*" -type f -exec strip --strip-unneeded {} + 2>/dev/null || true
+
           echo "Ukuran sesudah dibersihkan:"
           du -sh .
 
       - name: Compress Toolchain
         run: |
-          cd tc-build/install
-          tar -czvf ../../LLVM-toolchain-custom-clang.tar.gz .
+          cd tc-build/build/llvm/final
+
+          env GZIP=-9 tar -czvf $GITHUB_WORKSPACE/LLVM-toolchain-custom-clang.tar.gz .
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
