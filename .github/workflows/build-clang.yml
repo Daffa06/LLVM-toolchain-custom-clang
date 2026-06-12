@@ -99,15 +99,23 @@ jobs:
 
       - name: Send Notification Telegram
         if: always()
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TELEGRAM_TO }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
-          format: html
-          message: |
-            <b>🚀 Laporan Build Toolchain</b>
-            
-            <b>Status:</b> ${{ job.status }}
-            <b>Repository:</b> ${{ github.repository }}
-            
-            <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">🔍 Klik untuk Lihat Detail Build</a>
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            STATUS="Sukses"
+          else
+            STATUS="Gagal"
+          fi
+
+          MESSAGE="<b>Laporan Build Toolchain</b>
+
+          <b>Status:</b> ${STATUS}
+          <b>Repository:</b> ${{ github.repository }}
+
+          <a href=\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\">🔍 Klik untuk Lihat Detail Build</a>"
+
+          # Menembak API Telegram menggunakan curl
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_TO }}" \
+            -d parse_mode="HTML" \
+            -d disable_web_page_preview="true" \
+            -d text="$MESSAGE"
