@@ -68,6 +68,18 @@ jobs:
       - name: Check ccache
         run: ccache -s
 
+      - name: Strip & Clean Up Toolchain
+        run: |
+          cd tc-build/install
+          echo "Ukuran sebelum dibersihkan:"
+          du -sh .
+          find . -name "*.a" -type f -delete
+          rm -rf share/
+          find bin/ -type f -executable -exec strip --strip-all {} + 2>/dev/null || true
+          find lib/ -name "*.so*" -type f -exec strip --strip-unneeded {} + 2>/dev/null || true
+          echo "Ukuran sesudah dibersihkan:"
+          du -sh .
+
       - name: Compress Toolchain
         run: |
           cd tc-build/install
