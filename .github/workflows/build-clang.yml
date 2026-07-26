@@ -1,4 +1,4 @@
-name: Build Custom LLVM/Clang
+name: Build Custom LLVM/Clang (Self-Hosted)
 
 on:
   workflow_dispatch:
@@ -6,114 +6,68 @@ on:
 jobs:
   build-llvm:
     name: Compile LLVM Toolchain
-    runs-on: ubuntu-22.04
+    runs-on: self-hosted
     
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      # Mengarahkan ccache ke folder temporer di laptopmu
+      CCACHE_DIR: /tmp/ccache_llvm
+      
     steps:
-      - name: Maximize Build Space
-        uses: easimon/maximize-build-space@master
-        with:
-          root-reserve-mb: 16384
-          swap-size-mb: 2048
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-          remove-codeql: 'true'
-
-      - name: Manual Super Clean Disk
-        run: |
-          sudo docker image prune -a -f
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/share/boost /opt/az
-          sudo apt-get clean
-          mkdir -p /home/runner/work/system_cache/apt/lists
-          mkdir -p /home/runner/work/system_cache/apt/archives
-          mkdir -p /home/runner/work/system_cache/ccache
-          sudo rm -rf /var/lib/apt/lists && sudo ln -s /home/runner/work/system_cache/apt/lists /var/lib/apt/lists
-          sudo rm -rf /var/cache/apt/archives && sudo ln -s /home/runner/work/system_cache/apt/archives /var/cache/apt/archives 
-          echo "CCACHE_DIR=/home/runner/work/system_cache/ccache" >> $GITHUB_ENV
-          df -h
-
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python3 ninja-build cmake zstd
-
-      - name: Clone Official tc-build
-        run: git clone --depth=1 https://github.com/ClangBuiltLinux/tc-build.git
-
-      - name: Setup Cache ccache
-        uses: actions/cache@v4
-        with:
-          path: /home/runner/work/system_cache/ccache
-          key: ${{ runner.os }}-ccache-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-ccache-
-
-      - name: Configure Limit ccache
-        run: |
-          ccache -M 10G
-          ccache -z
-
-      - name: Build the LLVM Toolchain
+      - name: Build the LLVM Toolchain (Extreme Optimization)
         run: |
           cd tc-build
+          # Mengaktifkan ThinLTO, PGO, dan BOLT sekaligus untuk performa maksimal
           python3 build-llvm.py \
-            --projects clang lld llvm \
             --targets AArch64 ARM X86 \
-            --lto=thin
-            # --pgo=llvm dan --bolt dihapus untuk menghindari timeout 6 jam di server 2 core
+            --lto thin \
+            --pgo llvm \
+            --bolt
 
       - name: Check ccache
-        run: ccache -s
+        run: ccache -s || true
 
       - name: Strip & Clean Up Toolchain
         run: |
           cd tc-build/build/llvm/final
-
+          
           echo "Ukuran sebelum dibersihkan:"
           du -sh .
-
+          
           find . -name "*.a" -type f -delete
           rm -rf share/
-
           find bin/ -type f -executable -exec strip --strip-all {} + 2>/dev/null || true
           find lib/ -name "*.so*" -type f -exec strip --strip-unneeded {} + 2>/dev/null || true
-
+          
           echo "Ukuran sesudah dibersihkan:"
           du -sh .
 
       - name: Compress Toolchain
         run: |
           cd tc-build/build/llvm/final
-
-          env GZIP=-9 tar -czvf $GITHUB_WORKSPACE/LLVM-toolchain-custom-clang.tar.gz .
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: LLVM-Custom-Clang
-          path: LLVM-toolchain-custom-clang.tar.gz
-          compression-level: 0
+          # Menyimpan hasil kompresi di workspace agar mudah diakses
+          env GZIP=-9 tar -czvf $GITHUB_WORKSPACE/LLVM-toolchain-custom-clang-Extreme.tar.gz .
 
       - name: Send Notification Telegram
         if: always()
         run: |
           if [ "${{ job.status }}" = "success" ]; then
-            STATUS="Sukses"
+            STATUS="✅ Sukses (PGO + BOLT Optimized)"
           else
-            STATUS="Gagal"
+            STATUS="❌ Gagal"
           fi
-
-          MESSAGE="<b>Laporan Build Toolchain</b>
-
+          
+          MESSAGE="<b>Laporan Build Toolchain (Self-Hosted)</b>
+          
           <b>Status:</b> ${STATUS}
           <b>Repository:</b> ${{ github.repository }}
-
+          <b>Runner:</b> CachyOS Lokal
+          
           <a href=\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\">🔍 Klik untuk Lihat Detail Build</a>"
-
-          # Menembak API Telegram menggunakan curl
+          
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage" \
             -d chat_id="${{ secrets.TELEGRAM_TO }}" \
             -d parse_mode="HTML" \
