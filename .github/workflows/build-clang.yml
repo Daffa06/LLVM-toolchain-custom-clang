@@ -19,6 +19,11 @@ jobs:
 
       - name: Build the LLVM Toolchain (Extreme Optimization)
         run: |
+          if [ ! -d "tc-build" ]; then
+            echo "📥 Mengunduh tc-build dari ClangBuiltLinux..."
+            git clone https://github.com/ClangBuiltLinux/tc-build.git
+          fi
+          
           cd tc-build
           # Mengaktifkan ThinLTO, PGO, dan BOLT sekaligus untuk performa maksimal
           python3 build-llvm.py \
