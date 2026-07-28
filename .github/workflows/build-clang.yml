@@ -29,7 +29,8 @@ jobs:
           python3 build-llvm.py \
             --targets AArch64 ARM X86 \
             --lto full \
-            --pgo llvm
+            --pgo llvm \
+            --shallow-clone
 
       - name: Check ccache
         run: ccache -s || true
