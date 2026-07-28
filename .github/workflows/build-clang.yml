@@ -28,9 +28,8 @@ jobs:
           # Mengaktifkan ThinLTO, PGO, dan BOLT sekaligus untuk performa maksimal
           python3 build-llvm.py \
             --targets AArch64 ARM X86 \
-            --lto thin \
-            --pgo llvm \
-            --bolt
+            --lto full \
+            --pgo llvm
 
       - name: Check ccache
         run: ccache -s || true
