@@ -30,7 +30,8 @@ jobs:
             --targets AArch64 ARM X86 \
             --lto full \
             --pgo llvm \
-            --shallow-clone
+            --shallow-clone \
+            --jobs 4
 
       - name: Check ccache
         run: ccache -s || true
