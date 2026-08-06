@@ -31,7 +31,7 @@ jobs:
             --lto full \
             --pgo llvm \
             --shallow-clone \
-            --jobs 4
+            -D LLVM_PARALLEL_LINK_JOBS=1 LLVM_PARALLEL_COMPILE_JOBS=4
 
       - name: Check ccache
         run: ccache -s || true
